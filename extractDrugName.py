@@ -1,6 +1,7 @@
 import xlrd 
 import nltk
 import re
+import json
 from nltk.tokenize import word_tokenize
 #from nltk.corpus import brown
 #stopwords = brown.words()
@@ -19,23 +20,39 @@ stopwords = ['','plus','alone','vaccine','matching','with','placebo','to','of','
 				'test','product','reference','ca','irvine','stem','cells','matching','low',
 				'range','the','inc','cell','for','a','b','injection','protocol','placebos','oral'
 				'fix','fixed','side','effect','level','taken','every','minutes','or','ml']
+def get_data(csv_sheet):
 
-# Process elements in each row
-for i in range(1,200): 
-	currDrug = sheet.cell_value(i,7)
-	druglist = re.split('\|',currDrug)
-	# Find out the only two types of data we want in this row
-	druglist = [d for d in druglist if 'Drug' in d or 'Biological' in d]
-	#print 'This is the raw data'
-	#print druglist
+	# Process elements in each row
+	for i in range(1,45897): 
+		currDrug = sheet.cell_value(i,7)
+		NCT = sheet.cell_value(i,1)
+		druglist = re.split('\|',currDrug)
+		all_drug[NCT] = druglist
+		# Find out the only two types of data we want in this row
+		for value in all_drug[NCT]:
+			if "Drug" in word_tokenize(value) :
+				for i in range(0,len(value)):
+					if value[i] == ":":
+						all_drug[NCT] = {"Drug": value[i+1:]}
+			elif 'Biological' in word_tokenize(value):
+				for i in range(0,len(value)):
+					if value[i] == ":":
+						all_drug[NCT] = {"Biological": value[i+1:]}
+			else:
+				all_drug.pop(NCT, None)
 
-	currDrug = ' '.join(druglist)
-	druglist = re.split('\s|\/|\,|\(|\)|\%|',currDrug)
-	druglist = [d for d in druglist if d.lower() not in stopwords]
-	print(''.join(druglist))
-for line in druglist:
-	for i in range(0,len(line)):
-		if line[i] == ":":
-			all_drug[line[:i]] = line[i:]
-print(all_drug)
+	with open('result.json', 'w') as fp:
+	    json.dump(all_drug, fp)
+
+	return all_drug
+
+	# druglist = [d for d in druglist if 'Drug' in d or 'Biological' in d]
+	# currDrug = ' '.join(druglist)
+	# druglist = re.split('\s|\/|\,|\(|\)|\%|',currDrug)
+
+	# druglist = [d for d in druglist if d.lower() not in stopwords]
+	#print(''.join(druglist))
+	#for line in ''.join(druglist):
+
+print(get_data(sheet))
 
